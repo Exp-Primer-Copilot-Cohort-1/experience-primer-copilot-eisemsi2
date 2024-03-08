@@ -1,34 +1,38 @@
-// create web server
-const http = require('http');
-const fs = require('fs');
-const url = require('url');
+// Create web server
+var express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
+var fs = require('fs');
+var path = require('path');
 
-const server = http.createServer((req, res) => {
-  const path = url.parse(req.url).pathname;
-  console.log('path', path);
-  if (path === '/') {
-    fs.readFile(__dirname + '/index.html', (err, data) => {
-      if (err) {
-        res.writeHead(500);
-        return res.end('Error loading index.html');
-      }
-      res.writeHead(200);
-      res.end(data);
-    });
-  } else if (path === '/comments') {
-    fs.readFile(__dirname + '/comments.json', (err, data) => {
-      if (err) {
-        res.writeHead(500);
-        return res.end('Error loading comments.json');
-      }
-      res.writeHead(200);
-      res.end(data);
-    });
-  } else {
-    res.writeHead(404);
-    res.end('Not Found');
-  }
+// Set up body-parser
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+
+// Set up comments
+var COMMENTS_FILE = path.join(__dirname, 'comments.json');
+
+// Set up static files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Get comments
+app.get('/api/comments', function(req, res) {
+  fs.readFile(COMMENTS_FILE, function(err, data) {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
+    res.json(JSON.parse(data));
+  });
 });
 
-server.listen(3000);
-console.log('Server running at http://localhost:3000/')();
+// Post comments
+app.post('/api/comments', function(req, res) {
+  fs.readFile(COMMENTS_FILE, function(err, data) {
+    if (err) {
+      console.error(err);
+      process.exit(1);
+    }
+    var comments = JSON.parse(data);
+    var newComment = {
+      id: Date.now(),
